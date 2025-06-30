@@ -107,6 +107,8 @@ void overlayMain() {
   ///
   /// `overlayContent` the notification message
   ///
+  /// `notificationIcon` the notification icon resource name (without extension, e.g., "my_icon" for my_icon.png)
+  ///
   /// `enableDrag` to enable/disable dragging the overlay over the screen and default is "false"
   ///
   /// `positionGravity` the overlay postion after drag and default is [PositionGravity.none]
@@ -128,6 +130,12 @@ void overlayMain() {
  /// use [OverlayFlag.focusPointer] when you want to use fields that show keyboards
  await FlutterOverlayWindow.showOverlay(flag: OverlayFlag.focusPointer);
 
+ /// show overlay with custom notification icon
+ await FlutterOverlayWindow.showOverlay(
+   overlayTitle: "My Overlay",
+   overlayContent: "Overlay is running",
+   notificationIcon: "custom_notification_icon", // your custom icon name
+ );
 
  /// update the overlay flag while the overlay in action
  await FlutterOverlayWindow.updateFlag(OverlayFlag.defaultFlag);
@@ -185,4 +193,46 @@ enum OverlayFlag {
   }
 
 
+```
+
+### Custom Notification Icon
+
+You can customize the notification icon displayed when the overlay is active:
+
+#### Setup
+
+1. **Add your custom icon** to your Android project:
+   - Place your icon file in `android/app/src/main/res/drawable/` (for `.png`, `.xml` files)
+   - Or in `android/app/src/main/res/mipmap-*/` (for different density icons)
+
+2. **Use the icon** in your Flutter code:
+   ```dart
+   await FlutterOverlayWindow.showOverlay(
+     notificationIcon: "my_custom_icon", // without file extension
+   );
+   ```
+
+#### Icon Resolution Priority
+
+The plugin searches for your custom icon in the following order:
+1. **Custom icon** in drawable resources (`drawable/your_icon.png`)
+2. **Custom icon** in mipmap resources (`mipmap-*/your_icon.png`)
+3. **Default app launcher icon** (`ic_launcher`)
+4. **Plugin default icon** (fallback)
+
+#### Examples
+
+```dart
+// Using a drawable icon
+await FlutterOverlayWindow.showOverlay(
+  notificationIcon: "notification_overlay", // drawable/notification_overlay.png
+);
+
+// Using a mipmap icon with different densities
+await FlutterOverlayWindow.showOverlay(
+  notificationIcon: "overlay_icon", // mipmap-*/overlay_icon.png
+);
+
+// Without custom icon (uses default behavior)
+await FlutterOverlayWindow.showOverlay();
 ```

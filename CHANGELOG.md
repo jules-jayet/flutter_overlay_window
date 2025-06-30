@@ -1,3 +1,8 @@
+## 0.5.1
+- Add `notificationIcon` parameter to customize notification icon
+- Support for custom drawable and mipmap notification icons
+- Improved notification icon resolution with fallback system
+
 ## 0.5.0
 - Update gradle version
 - Fix `NullPointerException` in OverlayService

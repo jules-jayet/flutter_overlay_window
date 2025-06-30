@@ -34,6 +34,8 @@ class FlutterOverlayWindow {
   ///
   /// `overlayContent` the notification message
   ///
+  /// `notificationIcon` the notification icon resource name (without extension, e.g., "my_icon" for my_icon.png)
+  ///
   /// `enableDrag` to enable/disable dragging the overlay over the screen and default is "false"
   ///
   /// `positionGravity` the overlay postion after drag and default is [PositionGravity.none]
@@ -47,6 +49,7 @@ class FlutterOverlayWindow {
     OverlayFlag flag = OverlayFlag.defaultFlag,
     String overlayTitle = "overlay activated",
     String? overlayContent,
+    String? notificationIcon,
     bool enableDrag = false,
     PositionGravity positionGravity = PositionGravity.none,
     OverlayPosition? startPosition,
@@ -60,6 +63,7 @@ class FlutterOverlayWindow {
         "flag": flag.name,
         "overlayTitle": overlayTitle,
         "overlayContent": overlayContent,
+        "notificationIcon": notificationIcon,
         "enableDrag": enableDrag,
         "notificationVisibility": visibility.name,
         "positionGravity": positionGravity.name,

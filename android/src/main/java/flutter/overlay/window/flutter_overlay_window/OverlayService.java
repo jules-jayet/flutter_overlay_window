@@ -332,11 +332,34 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, pendingFlags);
-        final int notifyIcon = getDrawableResourceId("mipmap", "launcher");
+        
+        // Determine notification icon
+        int notifyIcon = 0;
+        if (WindowSetup.notificationIcon != null && !WindowSetup.notificationIcon.isEmpty()) {
+            // Try to get custom notification icon from drawable resources
+            notifyIcon = getApplicationContext().getResources().getIdentifier(
+                WindowSetup.notificationIcon, "drawable", getApplicationContext().getPackageName());
+            // If not found in drawable, try mipmap
+            if (notifyIcon == 0) {
+                notifyIcon = getApplicationContext().getResources().getIdentifier(
+                    WindowSetup.notificationIcon, "mipmap", getApplicationContext().getPackageName());
+            }
+        }
+        
+        // If no custom icon found, try default launcher icon
+        if (notifyIcon == 0) {
+            notifyIcon = getDrawableResourceId("mipmap", "launcher");
+        }
+        
+        // If still no icon found, use default notification icon
+        if (notifyIcon == 0) {
+            notifyIcon = R.drawable.notification_icon;
+        }
+        
         Notification notification = new NotificationCompat.Builder(this, OverlayConstants.CHANNEL_ID)
                 .setContentTitle(WindowSetup.overlayTitle)
                 .setContentText(WindowSetup.overlayContent)
-                .setSmallIcon(notifyIcon == 0 ? R.drawable.notification_icon : notifyIcon)
+                .setSmallIcon(notifyIcon)
                 .setContentIntent(pendingIntent)
                 .setVisibility(WindowSetup.notificationVisibility)
                 .build();
