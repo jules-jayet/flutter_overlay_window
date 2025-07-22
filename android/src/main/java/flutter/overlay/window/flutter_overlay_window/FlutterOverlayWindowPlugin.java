@@ -1,11 +1,13 @@
 package flutter.overlay.window.flutter_overlay_window;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
@@ -43,6 +45,7 @@ public class FlutterOverlayWindowPlugin implements
     private Activity mActivity;
     private BasicMessageChannel<Object> messenger;
     private Result pendingResult;
+    private Application.ActivityLifecycleCallbacks lifecycleCallbacks;
     final int REQUEST_CODE_FOR_OVERLAY_PERMISSION = 1248;
 
     @Override
@@ -146,6 +149,10 @@ public class FlutterOverlayWindowPlugin implements
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
         mActivity = binding.getActivity();
         binding.addActivityResultListener(this);
+        
+        // Register lifecycle callbacks to auto-close overlay when app is destroyed
+        setupActivityLifecycleMonitoring();
+        
         if (FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG) == null) {
             FlutterEngineGroup enn = new FlutterEngineGroup(context);
             DartExecutor.DartEntrypoint dEntry = new DartExecutor.DartEntrypoint(
@@ -153,6 +160,41 @@ public class FlutterOverlayWindowPlugin implements
                     "overlayMain");
             FlutterEngine engine = enn.createAndRunEngine(context, dEntry);
             FlutterEngineCache.getInstance().put(OverlayConstants.CACHED_TAG, engine);
+        }
+    }
+
+    private void setupActivityLifecycleMonitoring() {
+        if (mActivity != null) {
+            Application app = mActivity.getApplication();
+            lifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+                @Override
+                public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {}
+
+                @Override
+                public void onActivityStarted(@NonNull Activity activity) {}
+
+                @Override
+                public void onActivityResumed(@NonNull Activity activity) {}
+
+                @Override
+                public void onActivityPaused(@NonNull Activity activity) {}
+
+                @Override
+                public void onActivityStopped(@NonNull Activity activity) {}
+
+                @Override
+                public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
+
+                @Override
+                public void onActivityDestroyed(@NonNull Activity activity) {
+                    if (activity == mActivity && OverlayService.isRunning) {
+                        Intent intent = new Intent(context, OverlayService.class);
+                        context.stopService(intent);
+                        Log.d("OverlayPlugin", "Auto-closed overlay on app destroy");
+                    }
+                }
+            };
+            app.registerActivityLifecycleCallbacks(lifecycleCallbacks);
         }
     }
 
@@ -168,6 +210,11 @@ public class FlutterOverlayWindowPlugin implements
 
     @Override
     public void onDetachedFromActivity() {
+        if (mActivity != null && lifecycleCallbacks != null) {
+            Application app = mActivity.getApplication();
+            app.unregisterActivityLifecycleCallbacks(lifecycleCallbacks);
+            lifecycleCallbacks = null;
+        }
         this.mActivity = null;
     }
 

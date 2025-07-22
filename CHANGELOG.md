@@ -1,3 +1,8 @@
+## 0.5.2
+- Fix overlay persisting after app is completely closed (force close/swipe kill)
+- Add automatic overlay cleanup on app destruction via activity lifecycle monitoring
+- Remove need for manual MainActivity.onDestroy() override in user apps
+
 ## 0.5.1
 - Add `notificationIcon` parameter to customize notification icon
 - Support for custom drawable and mipmap notification icons
