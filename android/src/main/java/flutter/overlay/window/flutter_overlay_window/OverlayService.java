@@ -135,7 +135,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
     
         isRunning = true;
-        Log.d("OverlayService", "Service started");
+        Log.d("OverlayService", "Service started (BG-driven)");
     
         FlutterEngine engine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
         if (engine == null) {
@@ -150,8 +150,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         } else {
             engine.getLifecycleChannel().appIsResumed();
         }
-    
-        flutterChannel = new MethodChannel(engine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
+            flutterChannel = new MethodChannel(engine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
         overlayMessageChannel = new BasicMessageChannel<>(
                 engine.getDartExecutor(), OverlayConstants.MESSENGER_TAG, JSONMessageCodec.INSTANCE);
     
@@ -192,31 +191,16 @@ public class OverlayService extends Service implements View.OnTouchListener {
             szWindow.set(displaymetrics.widthPixels, displaymetrics.heightPixels);
         }
     
-        int widthPx;
-        if (WindowSetup.width == WindowManager.LayoutParams.MATCH_PARENT || WindowSetup.width == -1) {
-            widthPx = WindowManager.LayoutParams.MATCH_PARENT;
-        } else if (WindowSetup.width == WindowManager.LayoutParams.WRAP_CONTENT || WindowSetup.width == 0) {
-            widthPx = WindowManager.LayoutParams.WRAP_CONTENT;
-        } else {
-            widthPx = dpToPx(WindowSetup.width);
-        }
-    
-        int heightPx;
-        if (WindowSetup.height == WindowManager.LayoutParams.MATCH_PARENT || WindowSetup.height == -1) {
-            heightPx = WindowManager.LayoutParams.MATCH_PARENT;
-        } else if (WindowSetup.height == WindowManager.LayoutParams.WRAP_CONTENT || WindowSetup.height == 0) {
-            heightPx = WindowManager.LayoutParams.WRAP_CONTENT;
-        } else {
-            heightPx = dpToPx(WindowSetup.height);
-        }
+        int width = (WindowSetup.width == -1999) ? -1 : WindowSetup.width;
+        int height = (WindowSetup.height != -1999) ? WindowSetup.height : screenHeight();
     
         int type = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 : WindowManager.LayoutParams.TYPE_PHONE;
     
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                widthPx,
-                heightPx,
+                width,
+                height,
                 0,
                 -statusBarHeightPx(),
                 type,
@@ -249,16 +233,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
         moveOverlay(dx, dy, null);
     
         return START_NOT_STICKY;
-    }
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private int screenHeight() {
-        Display display = windowManager.getDefaultDisplay();
-        DisplayMetrics dm = new DisplayMetrics();
-        display.getRealMetrics(dm);
-        return inPortrait() ?
-                dm.heightPixels + statusBarHeightPx() + navigationBarHeightPx()
-                :
-                dm.heightPixels + statusBarHeightPx();
     }
 
     private int statusBarHeightPx() {
