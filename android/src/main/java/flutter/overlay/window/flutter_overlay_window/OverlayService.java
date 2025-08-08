@@ -235,6 +235,16 @@ public class OverlayService extends Service implements View.OnTouchListener {
         return START_NOT_STICKY;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private int screenHeight() {
+        Display display = windowManager.getDefaultDisplay();
+        DisplayMetrics dm = new DisplayMetrics();
+        display.getRealMetrics(dm);
+        return inPortrait()
+                ? dm.heightPixels + statusBarHeightPx() + navigationBarHeightPx()
+                : dm.heightPixels + statusBarHeightPx();
+    }
+
     private int statusBarHeightPx() {
         if (mStatusBarHeight == -1) {
             int statusBarHeightId = mResources.getIdentifier("status_bar_height", "dimen", "android");
@@ -287,7 +297,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
         if (windowManager != null) {
             WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
             params.width = (width == -1999 || width == -1) ? -1 : dpToPx(width);
-            params.height = (height != 1999 && height != -1) ? dpToPx(height) : height;
+            params.height = (height == -1999 || height == -1) ? -1 : dpToPx(height);
             WindowSetup.enableDrag = enableDrag;
             windowManager.updateViewLayout(flutterView, params);
             result.success(true);
