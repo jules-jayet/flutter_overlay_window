@@ -1,3 +1,7 @@
+## 0.5.3
+- Make OverlayService.onStartCommand null-safe and resilient to system restarts (no NPE on null Intent, no unnecessary stopSelf), preventing crash loops on MIUI/AutoPowerKill.
+- Improve engine/view lifecycle (reuse cached FlutterEngine, cleanly recreate overlay) and fix resizeOverlay() height condition.
+
 ## 0.5.2
 - Fix overlay persisting after app is completely closed (force close/swipe kill)
 - Add automatic overlay cleanup on app destruction via activity lifecycle monitoring
