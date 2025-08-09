@@ -1,17 +1,29 @@
 group 'flutter.overlay.window.flutter_overlay_window'
 version '1.0'
 
-plugins {
-    id 'com.android.library'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.3.0'
+    }
 }
 
-repositories {
-    google()
-    mavenCentral()
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
 }
+
+apply plugin: 'com.android.library'
 
 android {
-    namespace 'flutter.overlay.window.flutter_overlay_window'
+    if (project.android.hasProperty("namespace")) {
+        namespace 'flutter.overlay.window.flutter_overlay_window'
+    }
 
     compileSdk 35
 
