@@ -1,3 +1,9 @@
+## 6.0.0
+- Remove foreground service usage in `OverlayService` to avoid MIUI/AutoPowerKill when combined with an app's location FGS
+- Drop `FOREGROUND_SERVICE` permission from the plugin's manifest (overlay now runs as a normal service)
+- Keep `START_NOT_STICKY` to prevent auto-restarts after system kills
+- No Dart API changes; behavior change: overlay no longer posts its own persistent notification
+
 ## 0.5.3
 - Make OverlayService.onStartCommand null-safe and resilient to system restarts (no NPE on null Intent, no unnecessary stopSelf), preventing crash loops on MIUI/AutoPowerKill.
 - Improve engine/view lifecycle (reuse cached FlutterEngine, cleanly recreate overlay) and fix resizeOverlay() height condition.
