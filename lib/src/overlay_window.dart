@@ -26,15 +26,7 @@ class FlutterOverlayWindow {
   ///
   /// `alignment` the alignment postion on screen and default is [OverlayAlignment.center]
   ///
-  /// `visibilitySecret` the detail displayed in notifications on the lock screen and default is [NotificationVisibility.visibilitySecret]
-  ///
   /// `OverlayFlag` the overlay flag and default is [OverlayFlag.defaultFlag]
-  ///
-  /// `overlayTitle` the notification message and default is "overlay activated"
-  ///
-  /// `overlayContent` the notification message
-  ///
-  /// `notificationIcon` the notification icon resource name (without extension, e.g., "my_icon" for my_icon.png)
   ///
   /// `enableDrag` to enable/disable dragging the overlay over the screen and default is "false"
   ///
@@ -45,11 +37,7 @@ class FlutterOverlayWindow {
     int height = WindowSize.fullCover,
     int width = WindowSize.matchParent,
     OverlayAlignment alignment = OverlayAlignment.center,
-    NotificationVisibility visibility = NotificationVisibility.visibilitySecret,
     OverlayFlag flag = OverlayFlag.defaultFlag,
-    String overlayTitle = "overlay activated",
-    String? overlayContent,
-    String? notificationIcon,
     bool enableDrag = false,
     PositionGravity positionGravity = PositionGravity.none,
     OverlayPosition? startPosition,
@@ -61,11 +49,7 @@ class FlutterOverlayWindow {
         "width": width,
         "alignment": alignment.name,
         "flag": flag.name,
-        "overlayTitle": overlayTitle,
-        "overlayContent": overlayContent,
-        "notificationIcon": notificationIcon,
         "enableDrag": enableDrag,
-        "notificationVisibility": visibility.name,
         "positionGravity": positionGravity.name,
         "startPosition": startPosition?.toMap(),
       },

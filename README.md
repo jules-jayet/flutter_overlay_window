@@ -51,7 +51,7 @@ void overlayMain() {
 final bool hasPermission = await FlutterOverlayWindow.isPermissionGranted();
 final bool requested = await FlutterOverlayWindow.requestPermission();
 
-// Show overlay
+// Show overlay (no notification params needed)
 await FlutterOverlayWindow.showOverlay(
   height: 160,
   width: 330,

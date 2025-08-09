@@ -1,6 +1,8 @@
-## 6.0.2
-- Reduce deprecation warnings by using WindowMetrics on API 30+ (fallback to legacy APIs with deprecation suppression)
-- No functional changes
+## 6.1.0
+- Remove all notification-related parameters and code (overlay no longer runs as a foreground service)
+- Clean Dart API: drop overlayTitle/overlayContent/notificationIcon/notificationVisibility from `showOverlay`
+- Clean Android side: remove notification/channel usage from plugin and service
+- Docs updated
 
 ## 6.0.1
 - Set compileSdk 35 and minSdk 21

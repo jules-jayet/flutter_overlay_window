@@ -1,8 +1,6 @@
 package flutter.overlay.window.flutter_overlay_window;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+// Foreground notification imports removed
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +27,7 @@ import android.graphics.Rect;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
+// import androidx.core.app.NotificationCompat; // not used anymore
 
 import java.util.HashMap;
 import java.util.Map;
@@ -93,8 +91,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
             flutterView = null;
         }
         isRunning = false;
-        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancel(OverlayConstants.NOTIFICATION_ID);
+        // No foreground notification to cancel
         instance = null;
     }
 
@@ -404,16 +401,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    OverlayConstants.CHANNEL_ID,
-                    "Foreground Service Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            assert manager != null;
-            manager.createNotificationChannel(serviceChannel);
-        }
+        // No-op: no foreground notification channel needed
     }
 
     private int getDrawableResourceId(String resType, String name) {
