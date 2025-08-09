@@ -1,3 +1,6 @@
+## 6.0.1
+- Migrate plugin to ADP plugins DSL and set compileSdk35
+
 ## 6.0.0
 - Remove foreground service usage in `OverlayService` to avoid MIUI/AutoPowerKill when combined with an app's location FGS
 - Drop `FOREGROUND_SERVICE` permission from the plugin's manifest (overlay now runs as a normal service)
