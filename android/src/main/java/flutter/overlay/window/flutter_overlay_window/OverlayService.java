@@ -23,6 +23,8 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.WindowMetrics;
+import android.graphics.Rect;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -183,10 +185,17 @@ public class OverlayService extends Service implements View.OnTouchListener {
     
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
     
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowMetrics metrics = windowManager.getCurrentWindowMetrics();
+            Rect b = metrics.getBounds();
+            szWindow.set(b.width(), b.height());
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            //noinspection deprecation
             windowManager.getDefaultDisplay().getSize(szWindow);
         } else {
+            //noinspection deprecation
             DisplayMetrics displaymetrics = new DisplayMetrics();
+            //noinspection deprecation
             windowManager.getDefaultDisplay().getMetrics(displaymetrics);
             szWindow.set(displaymetrics.widthPixels, displaymetrics.heightPixels);
         }
@@ -237,12 +246,24 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     private int screenHeight() {
-        Display display = windowManager.getDefaultDisplay();
-        DisplayMetrics dm = new DisplayMetrics();
-        display.getRealMetrics(dm);
-        return inPortrait()
-                ? dm.heightPixels + statusBarHeightPx() + navigationBarHeightPx()
-                : dm.heightPixels + statusBarHeightPx();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowMetrics metrics = windowManager.getCurrentWindowMetrics();
+            Rect b = metrics.getBounds();
+            int baseHeight = b.height();
+            return inPortrait()
+                    ? baseHeight + statusBarHeightPx() + navigationBarHeightPx()
+                    : baseHeight + statusBarHeightPx();
+        } else {
+            //noinspection deprecation
+            Display display = windowManager.getDefaultDisplay();
+            //noinspection deprecation
+            DisplayMetrics dm = new DisplayMetrics();
+            //noinspection deprecation
+            display.getRealMetrics(dm);
+            return inPortrait()
+                    ? dm.heightPixels + statusBarHeightPx() + navigationBarHeightPx()
+                    : dm.heightPixels + statusBarHeightPx();
+        }
     }
 
     private int statusBarHeightPx() {

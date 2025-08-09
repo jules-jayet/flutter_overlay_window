@@ -1,5 +1,10 @@
+## 6.0.2
+- Reduce deprecation warnings by using WindowMetrics on API 30+ (fallback to legacy APIs with deprecation suppression)
+- No functional changes
+
 ## 6.0.1
-- Migrate plugin to ADP plugins DSL and set compileSdk35
+- Set compileSdk 35 and minSdk 21
+- Keep AGP 7.x-compatible build configuration (buildscript/apply plugin) for better compatibility with Flutter plugin resolution
 
 ## 6.0.0
 - Remove foreground service usage in `OverlayService` to avoid MIUI/AutoPowerKill when combined with an app's location FGS
