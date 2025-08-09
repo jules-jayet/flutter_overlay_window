@@ -3,7 +3,7 @@
 Flutter plugin to display a Flutter overlay on top of other apps, without using a Foreground Service (FGS).
 
 ### Why this fork
-- Better compatibility with aggressive OEM ROMs (e.g., MIUI) by avoiding a second overlay-specific Foreground Service.
+- Better compatibility with aggressive OEM ROMs (e.g., MIUI) by avoiding an overlay-specific Foreground Service.
 - The overlay runs as a normal (non-FGS) Android service using the `SYSTEM_ALERT_WINDOW` permission.
 
 ### Installation
