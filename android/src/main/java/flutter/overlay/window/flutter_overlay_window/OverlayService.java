@@ -464,6 +464,26 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         mTrayAnimationTimer = new Timer();
                         mTrayAnimationTimer.schedule(mTrayTimerTask, 0, 25);
                     }
+                    // Emit overlay_moved event with final position (only if drag occurred)
+                    if (dragging) {
+                        final int finalX = params.x;
+                        final int finalY = params.y;
+                        if (FlutterOverlayWindowPlugin.dragEventSink != null) {
+                            Runnable r = () -> {
+                                Map<String, Object> payload = new HashMap<>();
+                                payload.put("event", "overlay_moved");
+                                payload.put("x", (int) Math.round(pxToDp(finalX)));
+                                payload.put("y", (int) Math.round(pxToDp(finalY)));
+                                FlutterOverlayWindowPlugin.dragEventSink.success(payload);
+                            };
+                            if (Looper.myLooper() == Looper.getMainLooper()) {
+                                r.run();
+                            } else {
+                                new Handler(Looper.getMainLooper()).post(r);
+                            }
+                        }
+                        dragging = false;
+                    }
                     return false;
                 default:
                     return false;

@@ -68,6 +68,16 @@ FlutterOverlayWindow.overlayListener.listen((event) {
   // handle event
 });
 
+// Listen for drag end event
+FlutterOverlayWindow.overlayMovedStream.listen((e) async {
+  final x = e['x'] as int; // dp
+  final y = e['y'] as int; // dp
+  // Example: persist position, then restore it with startPosition on next showOverlay
+  // final prefs = await SharedPreferences.getInstance();
+  // await prefs.setInt('overlay_x', x);
+  // await prefs.setInt('overlay_y', y);
+});
+
 // Update flags/size/position
 await FlutterOverlayWindow.updateFlag(OverlayFlag.defaultFlag);
 await FlutterOverlayWindow.resizeOverlay(80, 120);
@@ -97,6 +107,17 @@ enum PositionGravity {
 ### Notes
 - Avoid multiple Foreground Services running at the same time. This fork removes FGS for the overlay.
 - If your app needs a Foreground Service (e.g., for location), keep it in your main/background service.
+
+### Drag end event details
+- EventChannel: `flutter_overlay_window_drag`
+- Event emitted on drag end (ACTION_UP) when `enableDrag: true`:
+
+```json
+{ "event": "overlay_moved", "x": 123, "y": 456 }
+```
+
+- `x` and `y` are integers in dp (density-independent pixels).
+- No events are emitted during movement (ACTION_MOVE), only once when the drag ends.
 
 ### License
 MIT

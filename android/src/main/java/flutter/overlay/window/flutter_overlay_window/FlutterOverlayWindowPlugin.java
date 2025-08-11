@@ -30,6 +30,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.JSONMessageCodec;
+import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -47,6 +48,7 @@ public class FlutterOverlayWindowPlugin implements
     private Result pendingResult;
     private Application.ActivityLifecycleCallbacks lifecycleCallbacks;
     final int REQUEST_CODE_FOR_OVERLAY_PERMISSION = 1248;
+    public static EventChannel.EventSink dragEventSink;
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -60,6 +62,20 @@ public class FlutterOverlayWindowPlugin implements
 
         WindowSetup.messenger = messenger;
         WindowSetup.messenger.setMessageHandler(this);
+
+        // Drag EventChannel setup
+        EventChannel dragChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), "flutter_overlay_window_drag");
+        dragChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object args, EventChannel.EventSink events) {
+                dragEventSink = events;
+            }
+
+            @Override
+            public void onCancel(Object args) {
+                dragEventSink = null;
+            }
+        });
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
@@ -137,6 +153,7 @@ public class FlutterOverlayWindowPlugin implements
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
         WindowSetup.messenger.setMessageHandler(null);
+        dragEventSink = null;
     }
 
     @Override

@@ -1,6 +1,6 @@
 name: flutter_overlay_window
 description: Flutter plugin for displaying your flutter app over other apps on the screen
-version: 6.1.0
+version: 6.2.0
 homepage: https://github.com/jules-jayet/flutter_overlay_window
 
 environment:

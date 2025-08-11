@@ -1,3 +1,8 @@
+## 6.2.0
+- Android: Add drag end event via EventChannel (stream name `flutter_overlay_window_drag`). Emits `{ "event": "overlay_moved", "x": int, "y": int }` on ACTION_UP when `enableDrag` is true.
+- Dart: Expose `FlutterOverlayWindow.overlayMovedStream` to listen to drag-end events.
+- Does not modify `enableDrag` behavior. No foreground service introduced.
+
 ## 6.1.0
 - Remove all notification-related parameters and code (overlay no longer runs as a foreground service)
 - Clean Dart API: drop overlayTitle/overlayContent/notificationIcon/notificationVisibility from `showOverlay`

@@ -15,6 +15,8 @@ class FlutterOverlayWindow {
       MethodChannel("x-slayer/overlay");
   static const BasicMessageChannel _overlayMessageChannel =
       BasicMessageChannel("x-slayer/overlay_messenger", JSONMessageCodec());
+  static const EventChannel _dragChannel =
+      EventChannel('flutter_overlay_window_drag');
 
   /// Open overLay content
   ///
@@ -95,6 +97,17 @@ class FlutterOverlayWindow {
       return message;
     });
     return _controller.stream;
+  }
+
+  /// Stream that emits an event when the overlay drag ends (ACTION_UP)
+  ///
+  /// Event payload example:
+  /// { "event": "overlay_moved", "x": <int>, "y": <int> }
+  static Stream<Map<String, dynamic>> get overlayMovedStream {
+    return _dragChannel
+        .receiveBroadcastStream()
+        .map((event) => (event as Map).cast<String, dynamic>())
+        .where((event) => event['event'] == 'overlay_moved');
   }
 
   /// Update the overlay flag while the overlay in action
