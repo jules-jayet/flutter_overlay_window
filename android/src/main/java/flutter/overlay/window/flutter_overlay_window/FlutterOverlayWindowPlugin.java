@@ -73,13 +73,29 @@ public class FlutterOverlayWindowPlugin implements
                 // Emit a readiness event with the current position if the overlay is already running.
                 try {
                     Map<String, Double> pos = OverlayService.getCurrentPosition();
+                    Integer xdp = null;
+                    Integer ydp = null;
                     if (pos != null) {
-                        java.util.HashMap<String, Object> payload = new java.util.HashMap<>();
-                        payload.put("event", "overlay_ready");
-                        // Round to int dp values for consistency with other events
-                        payload.put("x", pos.get("x").intValue());
-                        payload.put("y", pos.get("y").intValue());
-                        events.success(payload);
+                        xdp = pos.get("x").intValue();
+                        ydp = pos.get("y").intValue();
+                    } else {
+                        Map<String, Integer> cached = OverlayService.getCachedPositionDp();
+                        if (cached != null) {
+                            xdp = cached.get("x");
+                            ydp = cached.get("y");
+                        }
+                    }
+                    if (xdp != null && ydp != null) {
+                        final Integer fx = xdp;
+                        final Integer fy = ydp;
+                        android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
+                        h.post(() -> {
+                            java.util.HashMap<String, Object> payload = new java.util.HashMap<>();
+                            payload.put("event", "overlay_ready");
+                            payload.put("x", fx);
+                            payload.put("y", fy);
+                            events.success(payload);
+                        });
                     }
                 } catch (Throwable ignored) {
                 }

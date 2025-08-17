@@ -1,3 +1,10 @@
+## 6.2.3
+- Android: Improve robustness of drag EventChannel after app restarts.
+  - Post `overlay_ready` emission on main thread when Dart subscribes (onListen).
+  - Fallback to cached dp position if live position is not yet available.
+  - Add a lightweight watchdog in `OverlayService` that re-emits `overlay_ready` as soon as the EventChannel sink binds after a restart.
+  - Persist drag enablement inside the service (`enableDragLocal`) so `onTouch` keeps working even if static flags reset after UI restart.
+
 ## 6.2.2
 - Android: Emit `overlay_ready` event from `OverlayService` after the view is attached and positioned (via `flutter_overlay_window_drag` EventChannel).
 - Android: Also emit `overlay_ready` immediately when Dart subscribes to the EventChannel (onListen), if the overlay is already running. This fixes lost events after app restarts.
