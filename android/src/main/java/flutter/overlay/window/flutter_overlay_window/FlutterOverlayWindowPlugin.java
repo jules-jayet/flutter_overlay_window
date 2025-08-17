@@ -19,7 +19,6 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationManagerCompat;
 
 import java.util.Map;
-import java.util.Collections;
 
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -70,35 +69,6 @@ public class FlutterOverlayWindowPlugin implements
             @Override
             public void onListen(Object args, EventChannel.EventSink events) {
                 dragEventSink = events;
-                // Emit a readiness event with the current position if the overlay is already running.
-                try {
-                    Map<String, Double> pos = OverlayService.getCurrentPosition();
-                    Integer xdp = null;
-                    Integer ydp = null;
-                    if (pos != null) {
-                        xdp = pos.get("x").intValue();
-                        ydp = pos.get("y").intValue();
-                    } else {
-                        Map<String, Integer> cached = OverlayService.getCachedPositionDp();
-                        if (cached != null) {
-                            xdp = cached.get("x");
-                            ydp = cached.get("y");
-                        }
-                    }
-                    if (xdp != null && ydp != null) {
-                        final Integer fx = xdp;
-                        final Integer fy = ydp;
-                        android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
-                        h.post(() -> {
-                            java.util.HashMap<String, Object> payload = new java.util.HashMap<>();
-                            payload.put("event", "overlay_ready");
-                            payload.put("x", fx);
-                            payload.put("y", fy);
-                            events.success(payload);
-                        });
-                    }
-                } catch (Throwable ignored) {
-                }
             }
 
             @Override
@@ -157,16 +127,9 @@ public class FlutterOverlayWindowPlugin implements
         } else if (call.method.equals("isOverlayActive")) {
             result.success(OverlayService.isRunning);
             return;
-        } else if (call.method.equals("pingDragChannel")) {
-            // Returns true if the drag EventChannel is currently bound by Dart side
-            if (dragEventSink != null) {
-                try {
-                    dragEventSink.success(Collections.singletonMap("event", "ping"));
-                } catch (Throwable ignored) {}
-                result.success(true);
-            } else {
-                result.success(false);
-            }
+        } else if (call.method.equals("isOverlayActive")) {
+            result.success(OverlayService.isRunning);
+            return;
         } else if (call.method.equals("moveOverlay")) {
             int x = call.argument("x");
             int y = call.argument("y");

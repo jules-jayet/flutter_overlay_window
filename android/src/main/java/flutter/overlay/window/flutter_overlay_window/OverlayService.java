@@ -66,20 +66,13 @@ public class OverlayService extends Service implements View.OnTouchListener {
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
 
     private Handler mAnimationHandler = new Handler(Looper.getMainLooper());
-    private Handler mWatchdogHandler = new Handler(Looper.getMainLooper());
     private float lastX, lastY;
     private int lastYPosition;
     private boolean dragging;
-    private boolean enableDragLocal = false; // persisted within service lifecycle
     private static final float MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER = 0.8f;
     private Point szWindow = new Point();
     private Timer mTrayAnimationTimer;
     private TrayAnimationTimerTask mTrayTimerTask;
-
-    // Cache last known position in dp for readiness emission even if instance is not yet set
-    private static Integer lastKnownXdp = null;
-    private static Integer lastKnownYdp = null;
-    private boolean watchdogStarted = false;
 
     @Nullable
     @Override
@@ -142,12 +135,8 @@ public class OverlayService extends Service implements View.OnTouchListener {
             }
         }
     
-        // Ensure static instance is set for static helpers even if onCreate wasn't called yet
-        instance = this;
         isRunning = true;
         Log.d("OverlayService", "Service started (BG-driven)");
-        // Snapshot current drag state from WindowSetup (may be set by UI before service was started)
-        enableDragLocal = WindowSetup.enableDrag;
     
         FlutterEngine engine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
         if (engine == null) {
@@ -246,63 +235,11 @@ public class OverlayService extends Service implements View.OnTouchListener {
             isRunning = false;
             return START_NOT_STICKY;
         }
-
+    
         int dx = startX == OverlayConstants.DEFAULT_XY ? 0 : startX;
         int dy = startY == OverlayConstants.DEFAULT_XY ? -statusBarHeightPx() : startY;
         moveOverlay(dx, dy, null);
-        // After initial placement, update cached dp position
-        try {
-            WindowManager.LayoutParams p = (WindowManager.LayoutParams) flutterView.getLayoutParams();
-            lastKnownXdp = (int) Math.round(pxToDp(p.x));
-            lastKnownYdp = (int) Math.round(pxToDp(p.y));
-        } catch (Throwable ignored) {}
-
-        // Emit a readiness event so the Dart side can confirm channel binding
-        try {
-            if (FlutterOverlayWindowPlugin.dragEventSink != null) {
-                WindowManager.LayoutParams p = (WindowManager.LayoutParams) flutterView.getLayoutParams();
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("event", "overlay_ready");
-                payload.put("x", (int) Math.round(pxToDp(p.x)));
-                payload.put("y", (int) Math.round(pxToDp(p.y)));
-                if (Looper.myLooper() == Looper.getMainLooper()) {
-                    FlutterOverlayWindowPlugin.dragEventSink.success(payload);
-                } else {
-                    new Handler(Looper.getMainLooper()).post(() -> FlutterOverlayWindowPlugin.dragEventSink.success(payload));
-                }
-            } else {
-                Log.w("OverlayService", "dragEventSink null at start; will rely on watchdog");
-            }
-        } catch (Throwable t) {
-            Log.w("OverlayService", "Failed to emit overlay_ready: " + t);
-        }
-
-        // Start watchdog to re-emit overlay_ready once EventChannel sink becomes available post-restart
-        if (!watchdogStarted) {
-            watchdogStarted = true;
-            mWatchdogHandler.post(new Runnable() {
-                private boolean emittedAfterBind = false;
-                @Override public void run() {
-                    try {
-                        if (FlutterOverlayWindowPlugin.dragEventSink != null && !emittedAfterBind) {
-                            WindowManager.LayoutParams p = (WindowManager.LayoutParams) flutterView.getLayoutParams();
-                            Map<String, Object> payload = new HashMap<>();
-                            payload.put("event", "overlay_ready");
-                            payload.put("x", (int) Math.round(pxToDp(p.x)));
-                            payload.put("y", (int) Math.round(pxToDp(p.y)));
-                            FlutterOverlayWindowPlugin.dragEventSink.success(payload);
-                            Log.d("OverlayService", "Watchdog emitted overlay_ready after sink bind");
-                            emittedAfterBind = true;
-                        }
-                    } catch (Throwable t) {
-                        Log.w("OverlayService", "Watchdog error: " + t);
-                    }
-                    // Keep watchdog lightweight; run every 1000ms
-                    mWatchdogHandler.postDelayed(this, 1000);
-                }
-            });
-        }
-
+    
         return START_NOT_STICKY;
     }
 
@@ -382,7 +319,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
             params.width = (width == -1999 || width == -1) ? -1 : dpToPx(width);
             params.height = (height == -1999 || height == -1) ? -1 : dpToPx(height);
             WindowSetup.enableDrag = enableDrag;
-            enableDragLocal = enableDrag; // persist in service so UI restarts don't disable drag
             windowManager.updateViewLayout(flutterView, params);
             result.success(true);
         } else {
@@ -396,9 +332,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
             params.x = (x == -1999 || x == -1) ? -1 : dpToPx(x);
             params.y = dpToPx(y);
             windowManager.updateViewLayout(flutterView, params);
-            // Update cache in dp
-            lastKnownXdp = (int) Math.round(pxToDp(params.x));
-            lastKnownYdp = (int) Math.round(pxToDp(params.y));
             if (result != null)
                 result.success(true);
         } else {
@@ -419,16 +352,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
         return null;
     }
 
-    public static Map<String, Integer> getCachedPositionDp() {
-        if (lastKnownXdp != null && lastKnownYdp != null) {
-            Map<String, Integer> m = new HashMap<>();
-            m.put("x", lastKnownXdp);
-            m.put("y", lastKnownYdp);
-            return m;
-        }
-        return null;
-    }
-
     public static boolean moveOverlay(int x, int y) {
         if (instance != null && instance.flutterView != null) {
             if (instance.windowManager != null) {
@@ -436,9 +359,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
                 params.x = (x == -1999 || x == -1) ? -1 : instance.dpToPx(x);
                 params.y = instance.dpToPx(y);
                 instance.windowManager.updateViewLayout(instance.flutterView, params);
-                // Update cache in dp
-                lastKnownXdp = (int) Math.round(instance.pxToDp(params.x));
-                lastKnownYdp = (int) Math.round(instance.pxToDp(params.y));
                 return true;
             } else {
                 return false;
@@ -503,8 +423,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     @Override
     public boolean onTouch(View view, MotionEvent event) {
-        if (windowManager != null && enableDragLocal) {
-            Log.d("OverlayService", "onTouch action=" + event.getAction() + ", enableDragLocal=true");
+        if (windowManager != null && WindowSetup.enableDrag) {
             WindowManager.LayoutParams params = (WindowManager.LayoutParams) flutterView.getLayoutParams();
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -549,7 +468,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     if (dragging) {
                         final int finalX = params.x;
                         final int finalY = params.y;
-                        Log.d("OverlayService", "Drag finished; will emit overlay_moved x=" + finalX + " y=" + finalY + "; sink=" + (FlutterOverlayWindowPlugin.dragEventSink != null));
                         if (FlutterOverlayWindowPlugin.dragEventSink != null) {
                             Runnable r = () -> {
                                 Map<String, Object> payload = new HashMap<>();
@@ -563,23 +481,14 @@ public class OverlayService extends Service implements View.OnTouchListener {
                             } else {
                                 new Handler(Looper.getMainLooper()).post(r);
                             }
-                        } else {
-                            Log.w("OverlayService", "Drag finished but dragEventSink is null; event dropped");
                         }
-                        // Update cached dp position
-                        lastKnownXdp = (int) Math.round(pxToDp(finalX));
-                        lastKnownYdp = (int) Math.round(pxToDp(finalY));
                         dragging = false;
                     }
                     return false;
                 default:
-                    Log.d("OverlayService", "onTouch action(other)=" + event.getAction() + ", enableDragLocal=" + enableDragLocal);
                     return false;
             }
             return false;
-        }
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            Log.d("OverlayService", "onTouch ignored; enableDragLocal=" + enableDragLocal + ", flags=" + WindowSetup.flag);
         }
         return false;
     }

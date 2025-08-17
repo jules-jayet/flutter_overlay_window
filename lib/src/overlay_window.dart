@@ -110,25 +110,6 @@ class FlutterOverlayWindow {
         .where((event) => event['event'] == 'overlay_moved');
   }
 
-  /// Stream that emits once when the overlay service is ready and bound
-  /// to the EventChannel (emitted by native service after view is attached)
-  ///
-  /// Event payload example:
-  /// { "event": "overlay_ready", "x": <int>, "y": <int> }
-  static Stream<Map<String, dynamic>> get overlayReadyStream {
-    return _dragChannel
-        .receiveBroadcastStream()
-        .map((event) => (event as Map).cast<String, dynamic>())
-        .where((event) => event['event'] == 'overlay_ready');
-  }
-
-  /// Ping the native side to verify that the drag EventChannel is currently bound
-  /// Returns true if the native plugin has an active EventSink.
-  static Future<bool> pingDragChannel() async {
-    final bool? res = await _channel.invokeMethod<bool>('pingDragChannel');
-    return res ?? false;
-  }
-
   /// Update the overlay flag while the overlay in action
   static Future<bool?> updateFlag(OverlayFlag flag) async {
     final bool? _res = await _overlayChannel

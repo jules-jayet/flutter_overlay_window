@@ -78,17 +78,6 @@ FlutterOverlayWindow.overlayMovedStream.listen((e) async {
   // await prefs.setInt('overlay_y', y);
 });
 
-// Optional: readiness signal emitted right after overlay is attached
-FlutterOverlayWindow.overlayReadyStream.first.then((e) {
-  // e = { "event": "overlay_ready", "x": int, "y": int }
-});
-
-// Optional: ping to verify EventChannel health
-final ok = await FlutterOverlayWindow.pingDragChannel();
-if (!ok) {
-  // take action (e.g., restart overlay in your app logic)
-}
-
 // Update flags/size/position
 await FlutterOverlayWindow.updateFlag(OverlayFlag.defaultFlag);
 await FlutterOverlayWindow.resizeOverlay(80, 120);
@@ -118,10 +107,6 @@ enum PositionGravity {
 ### Notes
 - Avoid multiple Foreground Services running at the same time. This fork removes FGS for the overlay.
 - If your app needs a Foreground Service (e.g., for location), keep it in your main/background service.
-- After app restarts while the overlay remains on screen, the plugin now ensures the drag EventChannel is robust:
-  - `overlay_ready` is emitted when the Dart side subscribes, posted on the main thread.
-  - A lightweight watchdog in the Android service re-emits `overlay_ready` once the EventChannel sink binds, if needed.
-  - Keep your listeners (`overlayReadyStream`, `overlayMovedStream`) attached early during app startup for best reliability.
 
 ### Drag end event details
 - EventChannel: `flutter_overlay_window_drag`
