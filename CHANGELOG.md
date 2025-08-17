@@ -1,3 +1,9 @@
+## 6.2.1
+- Android: Emit `overlay_ready` event from `OverlayService` after the view is attached and positioned (via `flutter_overlay_window_drag` EventChannel).
+- Android: Add `pingDragChannel` MethodChannel method to verify EventChannel binding health.
+- Dart: Expose `FlutterOverlayWindow.overlayReadyStream` and `FlutterOverlayWindow.pingDragChannel()`.
+- Fix: remove duplicated `isOverlayActive` branch in plugin.
+
 ## 6.2.0
 - Android: Add drag end event via EventChannel (stream name `flutter_overlay_window_drag`). Emits `{ "event": "overlay_moved", "x": int, "y": int }` on ACTION_UP when `enableDrag` is true.
 - Dart: Expose `FlutterOverlayWindow.overlayMovedStream` to listen to drag-end events.

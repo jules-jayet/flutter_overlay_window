@@ -78,6 +78,17 @@ FlutterOverlayWindow.overlayMovedStream.listen((e) async {
   // await prefs.setInt('overlay_y', y);
 });
 
+// Optional: readiness signal emitted right after overlay is attached
+FlutterOverlayWindow.overlayReadyStream.first.then((e) {
+  // e = { "event": "overlay_ready", "x": int, "y": int }
+});
+
+// Optional: ping to verify EventChannel health
+final ok = await FlutterOverlayWindow.pingDragChannel();
+if (!ok) {
+  // take action (e.g., restart overlay in your app logic)
+}
+
 // Update flags/size/position
 await FlutterOverlayWindow.updateFlag(OverlayFlag.defaultFlag);
 await FlutterOverlayWindow.resizeOverlay(80, 120);

@@ -235,11 +235,29 @@ public class OverlayService extends Service implements View.OnTouchListener {
             isRunning = false;
             return START_NOT_STICKY;
         }
-    
+
         int dx = startX == OverlayConstants.DEFAULT_XY ? 0 : startX;
         int dy = startY == OverlayConstants.DEFAULT_XY ? -statusBarHeightPx() : startY;
         moveOverlay(dx, dy, null);
-    
+
+        // Emit a readiness event so the Dart side can confirm channel binding
+        try {
+            if (FlutterOverlayWindowPlugin.dragEventSink != null) {
+                WindowManager.LayoutParams p = (WindowManager.LayoutParams) flutterView.getLayoutParams();
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("event", "overlay_ready");
+                payload.put("x", (int) Math.round(pxToDp(p.x)));
+                payload.put("y", (int) Math.round(pxToDp(p.y)));
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    FlutterOverlayWindowPlugin.dragEventSink.success(payload);
+                } else {
+                    new Handler(Looper.getMainLooper()).post(() -> FlutterOverlayWindowPlugin.dragEventSink.success(payload));
+                }
+            }
+        } catch (Throwable t) {
+            Log.w("OverlayService", "Failed to emit overlay_ready: " + t);
+        }
+
         return START_NOT_STICKY;
     }
 
