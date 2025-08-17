@@ -1,5 +1,6 @@
-## 6.2.1
+## 6.2.2
 - Android: Emit `overlay_ready` event from `OverlayService` after the view is attached and positioned (via `flutter_overlay_window_drag` EventChannel).
+- Android: Also emit `overlay_ready` immediately when Dart subscribes to the EventChannel (onListen), if the overlay is already running. This fixes lost events after app restarts.
 - Android: Add `pingDragChannel` MethodChannel method to verify EventChannel binding health.
 - Dart: Expose `FlutterOverlayWindow.overlayReadyStream` and `FlutterOverlayWindow.pingDragChannel()`.
 - Fix: remove duplicated `isOverlayActive` branch in plugin.

@@ -70,6 +70,19 @@ public class FlutterOverlayWindowPlugin implements
             @Override
             public void onListen(Object args, EventChannel.EventSink events) {
                 dragEventSink = events;
+                // Emit a readiness event with the current position if the overlay is already running.
+                try {
+                    Map<String, Double> pos = OverlayService.getCurrentPosition();
+                    if (pos != null) {
+                        java.util.HashMap<String, Object> payload = new java.util.HashMap<>();
+                        payload.put("event", "overlay_ready");
+                        // Round to int dp values for consistency with other events
+                        payload.put("x", pos.get("x").intValue());
+                        payload.put("y", pos.get("y").intValue());
+                        events.success(payload);
+                    }
+                } catch (Throwable ignored) {
+                }
             }
 
             @Override
