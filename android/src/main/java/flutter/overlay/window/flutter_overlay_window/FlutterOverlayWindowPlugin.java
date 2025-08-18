@@ -74,8 +74,8 @@ public class FlutterOverlayWindowPlugin implements
 
             @Override
             public void onCancel(Object args) {
-                dragEventSink = null;
-                Log.d("OverlayPlugin", "dragEventSink disconnected");
+                // Don't set to null on cancel to preserve connection across restarts
+                Log.d("OverlayPlugin", "dragEventSink onCancel called but keeping connection");
             }
         });
     }
@@ -155,7 +155,8 @@ public class FlutterOverlayWindowPlugin implements
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
         WindowSetup.messenger.setMessageHandler(null);
-        dragEventSink = null;
+        // Don't set dragEventSink to null to preserve connection across engine restarts
+        // dragEventSink = null;
     }
 
     @Override

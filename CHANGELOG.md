@@ -1,7 +1,6 @@
 ## 6.2.1
 - Fix: Overlay drag events not emitted after app restart
-- Add: `initializeDragStream()` method to ensure EventSink connection
-- Add: Debug logs for dragEventSink connection state
+- Fix: Preserve dragEventSink reference across Flutter engine lifecycle
 - Add: Warning log when drag events are lost due to null EventSink
 
 ## 6.2.0
