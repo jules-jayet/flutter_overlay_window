@@ -481,6 +481,8 @@ public class OverlayService extends Service implements View.OnTouchListener {
                             } else {
                                 new Handler(Looper.getMainLooper()).post(r);
                             }
+                        } else {
+                            Log.w("OverlayService", "dragEventSink is null, overlay_moved event lost");
                         }
                         dragging = false;
                     }

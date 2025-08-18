@@ -1,3 +1,9 @@
+## 6.2.1
+- Fix: Overlay drag events not emitted after app restart
+- Add: `initializeDragStream()` method to ensure EventSink connection
+- Add: Debug logs for dragEventSink connection state
+- Add: Warning log when drag events are lost due to null EventSink
+
 ## 6.2.0
 - Android: Add drag end event via EventChannel (stream name `flutter_overlay_window_drag`). Emits `{ "event": "overlay_moved", "x": int, "y": int }` on ACTION_UP when `enableDrag` is true.
 - Dart: Expose `FlutterOverlayWindow.overlayMovedStream` to listen to drag-end events.

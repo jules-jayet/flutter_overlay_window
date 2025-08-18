@@ -69,11 +69,13 @@ public class FlutterOverlayWindowPlugin implements
             @Override
             public void onListen(Object args, EventChannel.EventSink events) {
                 dragEventSink = events;
+                Log.d("OverlayPlugin", "dragEventSink connected");
             }
 
             @Override
             public void onCancel(Object args) {
                 dragEventSink = null;
+                Log.d("OverlayPlugin", "dragEventSink disconnected");
             }
         });
     }

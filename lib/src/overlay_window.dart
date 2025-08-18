@@ -110,6 +110,13 @@ class FlutterOverlayWindow {
         .where((event) => event['event'] == 'overlay_moved');
   }
 
+  /// Initialize the drag event stream to ensure EventSink is connected
+  /// Call this before showing overlay to guarantee event reception
+  static void initializeDragStream() {
+    // Force stream subscription to connect dragEventSink
+    _dragChannel.receiveBroadcastStream().listen((_) {}, onError: (_) {});
+  }
+
   /// Update the overlay flag while the overlay in action
   static Future<bool?> updateFlag(OverlayFlag flag) async {
     final bool? _res = await _overlayChannel
