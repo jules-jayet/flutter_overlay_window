@@ -49,6 +49,7 @@ public class FlutterOverlayWindowPlugin implements
     private Application.ActivityLifecycleCallbacks lifecycleCallbacks;
     final int REQUEST_CODE_FOR_OVERLAY_PERMISSION = 1248;
     public static EventChannel.EventSink dragEventSink;
+    public static EventChannel.EventSink orientationEventSink;
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -76,6 +77,22 @@ public class FlutterOverlayWindowPlugin implements
             public void onCancel(Object args) {
                 // Don't set to null on cancel to preserve connection across restarts
                 Log.d("OverlayPlugin", "dragEventSink onCancel called but keeping connection");
+            }
+        });
+
+        // Orientation EventChannel setup
+        EventChannel orientationChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), "flutter_overlay_window_orientation");
+        orientationChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object args, EventChannel.EventSink events) {
+                orientationEventSink = events;
+                Log.d("OverlayPlugin", "orientationEventSink connected");
+            }
+
+            @Override
+            public void onCancel(Object args) {
+                // Don't set to null on cancel to preserve connection across restarts
+                Log.d("OverlayPlugin", "orientationEventSink onCancel called but keeping connection");
             }
         });
     }
@@ -155,8 +172,9 @@ public class FlutterOverlayWindowPlugin implements
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
         WindowSetup.messenger.setMessageHandler(null);
-        // Don't set dragEventSink to null to preserve connection across engine restarts
+        // Don't set dragEventSink or orientationEventSink to null to preserve connection across engine restarts
         // dragEventSink = null;
+        // orientationEventSink = null;
     }
 
     @Override

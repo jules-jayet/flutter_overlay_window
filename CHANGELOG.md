@@ -1,3 +1,12 @@
+## 6.3.0
+- Add: Orientation change detection via EventChannel
+- Add: `orientationChangedStream` to listen for portrait/landscape changes
+- Add: `OverlayOrientation` enum model (portrait, landscape, unknown)
+- Android: Implement `onConfigurationChanged` listener in OverlayService
+- EventChannel: `flutter_overlay_window_orientation` emits `{ "event": "orientation_changed", "orientation": "portrait" | "landscape" }`
+- Thread-safe event emission with null-safety checks
+- Follows same pattern as existing drag event implementation
+
 ## 6.2.1
 - Fix: Overlay drag events not emitted after app restart
 - Fix: Preserve dragEventSink reference across Flutter engine lifecycle

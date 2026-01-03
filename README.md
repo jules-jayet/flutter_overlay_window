@@ -78,6 +78,13 @@ FlutterOverlayWindow.overlayMovedStream.listen((e) async {
   // await prefs.setInt('overlay_y', y);
 });
 
+// Listen for orientation change event
+FlutterOverlayWindow.orientationChangedStream.listen((orientation) {
+  // orientation is OverlayOrientation.portrait or OverlayOrientation.landscape
+  print('Orientation changed to: $orientation');
+  // Example: adjust overlay layout based on orientation
+});
+
 // Update flags/size/position
 await FlutterOverlayWindow.updateFlag(OverlayFlag.defaultFlag);
 await FlutterOverlayWindow.resizeOverlay(80, 120);
@@ -118,6 +125,18 @@ enum PositionGravity {
 
 - `x` and `y` are integers in dp (density-independent pixels).
 - No events are emitted during movement (ACTION_MOVE), only once when the drag ends.
+
+### Orientation change event details
+- EventChannel: `flutter_overlay_window_orientation`
+- Event emitted when device orientation changes (portrait ↔ landscape):
+
+```json
+{ "event": "orientation_changed", "orientation": "portrait" }
+```
+
+- `orientation` is either `"portrait"` or `"landscape"`.
+- The stream `orientationChangedStream` returns typed `OverlayOrientation` enum values.
+- Events are only emitted when orientation actually changes, not on every configuration change.
 
 ### License
 MIT

@@ -64,6 +64,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
     private BasicMessageChannel<Object> overlayMessageChannel;
     private int clickableFlag = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+    private int currentOrientation = Configuration.ORIENTATION_UNDEFINED;
 
     private Handler mAnimationHandler = new Handler(Looper.getMainLooper());
     private float lastX, lastY;
@@ -395,9 +396,42 @@ public class OverlayService extends Service implements View.OnTouchListener {
             overlayMessageChannel = new BasicMessageChannel(flutterEngine.getDartExecutor(), OverlayConstants.MESSENGER_TAG, JSONMessageCodec.INSTANCE);
         }
 
+        // Initialize current orientation
+        currentOrientation = getResources().getConfiguration().orientation;
+
         // Do NOT promote to foreground: overlay should not create a second FGS.
         // Keep service non-foreground; instance tracking remains for overlay controls.
         instance = this;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        
+        // Check if orientation has changed
+        if (newConfig.orientation != currentOrientation && newConfig.orientation != Configuration.ORIENTATION_UNDEFINED) {
+            currentOrientation = newConfig.orientation;
+            
+            // Emit orientation change event
+            String orientationString = (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) ? "portrait" : "landscape";
+            
+            if (FlutterOverlayWindowPlugin.orientationEventSink != null) {
+                Runnable r = () -> {
+                    Map<String, Object> payload = new HashMap<>();
+                    payload.put("event", "orientation_changed");
+                    payload.put("orientation", orientationString);
+                    FlutterOverlayWindowPlugin.orientationEventSink.success(payload);
+                    Log.d("OverlayService", "Orientation changed to: " + orientationString);
+                };
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    r.run();
+                } else {
+                    new Handler(Looper.getMainLooper()).post(r);
+                }
+            } else {
+                Log.w("OverlayService", "orientationEventSink is null, orientation_changed event lost");
+            }
+        }
     }
 
     private void createNotificationChannel() {

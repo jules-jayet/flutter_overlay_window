@@ -3,20 +3,29 @@ import 'dart:developer';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_overlay_window/src/models/overlay_position.dart';
+import 'package:flutter_overlay_window/src/models/overlay_orientation.dart';
 import 'package:flutter_overlay_window/src/overlay_config.dart';
 
 class FlutterOverlayWindow {
   FlutterOverlayWindow._();
 
   static final StreamController _controller = StreamController();
-  static const MethodChannel _channel =
-      MethodChannel("x-slayer/overlay_channel");
-  static const MethodChannel _overlayChannel =
-      MethodChannel("x-slayer/overlay");
-  static const BasicMessageChannel _overlayMessageChannel =
-      BasicMessageChannel("x-slayer/overlay_messenger", JSONMessageCodec());
-  static const EventChannel _dragChannel =
-      EventChannel('flutter_overlay_window_drag');
+  static const MethodChannel _channel = MethodChannel(
+    "x-slayer/overlay_channel",
+  );
+  static const MethodChannel _overlayChannel = MethodChannel(
+    "x-slayer/overlay",
+  );
+  static const BasicMessageChannel _overlayMessageChannel = BasicMessageChannel(
+    "x-slayer/overlay_messenger",
+    JSONMessageCodec(),
+  );
+  static const EventChannel _dragChannel = EventChannel(
+    'flutter_overlay_window_drag',
+  );
+  static const EventChannel _orientationChannel = EventChannel(
+    'flutter_overlay_window_orientation',
+  );
 
   /// Open overLay content
   ///
@@ -44,18 +53,15 @@ class FlutterOverlayWindow {
     PositionGravity positionGravity = PositionGravity.none,
     OverlayPosition? startPosition,
   }) async {
-    await _channel.invokeMethod(
-      'showOverlay',
-      {
-        "height": height,
-        "width": width,
-        "alignment": alignment.name,
-        "flag": flag.name,
-        "enableDrag": enableDrag,
-        "positionGravity": positionGravity.name,
-        "startPosition": startPosition?.toMap(),
-      },
-    );
+    await _channel.invokeMethod('showOverlay', {
+      "height": height,
+      "width": width,
+      "alignment": alignment.name,
+      "flag": flag.name,
+      "enableDrag": enableDrag,
+      "positionGravity": positionGravity.name,
+      "startPosition": startPosition?.toMap(),
+    });
   }
 
   /// Check if overlay permission is granted
@@ -110,11 +116,26 @@ class FlutterOverlayWindow {
         .where((event) => event['event'] == 'overlay_moved');
   }
 
+  /// Stream that emits an event when the device orientation changes
+  ///
+  /// Event payload example:
+  /// { "event": "orientation_changed", "orientation": "portrait" | "landscape" }
+  static Stream<OverlayOrientation> get orientationChangedStream {
+    return _orientationChannel
+        .receiveBroadcastStream()
+        .map((event) => (event as Map).cast<String, dynamic>())
+        .where((event) => event['event'] == 'orientation_changed')
+        .map(
+          (event) =>
+              OverlayOrientation.fromString(event['orientation'] as String?),
+        );
+  }
 
   /// Update the overlay flag while the overlay in action
   static Future<bool?> updateFlag(OverlayFlag flag) async {
-    final bool? _res = await _overlayChannel
-        .invokeMethod<bool?>('updateFlag', {'flag': flag.name});
+    final bool? _res = await _overlayChannel.invokeMethod<bool?>('updateFlag', {
+      'flag': flag.name,
+    });
     return _res;
   }
 
@@ -126,11 +147,7 @@ class FlutterOverlayWindow {
   ) async {
     final bool? _res = await _overlayChannel.invokeMethod<bool?>(
       'resizeOverlay',
-      {
-        'width': width,
-        'height': height,
-        'enableDrag': enableDrag,
-      },
+      {'width': width, 'height': height, 'enableDrag': enableDrag},
     );
     return _res;
   }
