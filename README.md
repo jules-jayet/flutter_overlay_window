@@ -49,7 +49,7 @@ void overlayMain() {
 ```dart
 // Check/request overlay permission
 final bool hasPermission = await FlutterOverlayWindow.isPermissionGranted();
-final bool requested = await FlutterOverlayWindow.requestPermission();
+final bool? requested = await FlutterOverlayWindow.requestPermission();
 
 // Show overlay (no notification params needed)
 await FlutterOverlayWindow.showOverlay(

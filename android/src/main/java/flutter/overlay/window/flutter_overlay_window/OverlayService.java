@@ -1,6 +1,5 @@
 package flutter.overlay.window.flutter_overlay_window;
 
-// Foreground notification imports removed
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -8,7 +7,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.app.PendingIntent;
 import android.graphics.Point;
 import android.os.Build;
 import android.os.Handler;
@@ -26,8 +24,6 @@ import android.view.WindowMetrics;
 import android.graphics.Rect;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-// import androidx.core.app.NotificationCompat; // not used anymore
 
 import java.util.HashMap;
 import java.util.Map;
@@ -81,22 +77,48 @@ public class OverlayService extends Service implements View.OnTouchListener {
         return null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onDestroy() {
-        Log.d("OverLay", "Destroying the overlay window service");
-        if (windowManager != null) {
-            windowManager.removeView(flutterView);
-            windowManager = null;
-            flutterView.detachFromFlutterEngine();
-            flutterView = null;
+        Log.d("OverlayService", "Destroying the overlay window service");
+        if (mTrayAnimationTimer != null) {
+            mTrayAnimationTimer.cancel();
+            mTrayAnimationTimer = null;
         }
+        detachFlutterView();
         isRunning = false;
-        // No foreground notification to cancel
         instance = null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    // The window and its view always come down together; tearing them down
+    // separately is what used to leave a detached view registered with the
+    // WindowManager on restart.
+    private void detachFlutterView() {
+        if (windowManager != null && flutterView != null) {
+            try { windowManager.removeView(flutterView); } catch (Throwable ignored) {}
+        }
+        windowManager = null;
+        if (flutterView != null) {
+            try { flutterView.detachFromFlutterEngine(); } catch (Throwable ignored) {}
+            flutterView = null;
+        }
+    }
+
+    // Single owner of the cached overlay engine: it was created in three
+    // different places (plugin attach, onCreate, onStartCommand), each with
+    // its own copy of the same block.
+    static FlutterEngine ensureEngine(Context context) {
+        FlutterEngine engine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
+        if (engine == null) {
+            FlutterEngineGroup engineGroup = new FlutterEngineGroup(context);
+            DartExecutor.DartEntrypoint entryPoint = new DartExecutor.DartEntrypoint(
+                    FlutterInjector.instance().flutterLoader().findAppBundlePath(),
+                    "overlayMain");
+            engine = engineGroup.createAndRunEngine(context, entryPoint);
+            FlutterEngineCache.getInstance().put(OverlayConstants.CACHED_TAG, engine);
+        }
+        return engine;
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
     
@@ -114,45 +136,25 @@ public class OverlayService extends Service implements View.OnTouchListener {
         final boolean isCloseWindow = intent.getBooleanExtra(INTENT_EXTRA_IS_CLOSE_WINDOW, false);
     
         if (isCloseWindow) {
-            if (windowManager != null) {
-                try { windowManager.removeView(flutterView); } catch (Throwable ignored) {}
-                windowManager = null;
-            }
-            if (flutterView != null) {
-                try { flutterView.detachFromFlutterEngine(); } catch (Throwable ignored) {}
-                flutterView = null;
-            }
+            detachFlutterView();
             stopSelf();
             isRunning = false;
             return START_NOT_STICKY;
         }
-    
-        if (windowManager != null) {
-            try { windowManager.removeView(flutterView); } catch (Throwable ignored) {}
-            windowManager = null;
-            if (flutterView != null) {
-                try { flutterView.detachFromFlutterEngine(); } catch (Throwable ignored) {}
-                flutterView = null;
-            }
-        }
-    
+
+        detachFlutterView();
+
         isRunning = true;
         Log.d("OverlayService", "Service started (BG-driven)");
-    
+
         FlutterEngine engine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
         if (engine == null) {
             Log.e("OverlayService", "Flutter engine not found in cache, creating a new one");
-            FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
-            DartExecutor.DartEntrypoint entryPoint = new DartExecutor.DartEntrypoint(
-                    FlutterInjector.instance().flutterLoader().findAppBundlePath(),
-                    "overlayMain"
-            );
-            engine = engineGroup.createAndRunEngine(this, entryPoint);
-            FlutterEngineCache.getInstance().put(OverlayConstants.CACHED_TAG, engine);
+            engine = ensureEngine(this);
         } else {
             engine.getLifecycleChannel().appIsResumed();
         }
-            flutterChannel = new MethodChannel(engine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
+        flutterChannel = new MethodChannel(engine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
         overlayMessageChannel = new BasicMessageChannel<>(
                 engine.getDartExecutor(), OverlayConstants.MESSENGER_TAG, JSONMessageCodec.INSTANCE);
     
@@ -189,15 +191,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
             WindowMetrics metrics = windowManager.getCurrentWindowMetrics();
             Rect b = metrics.getBounds();
             szWindow.set(b.width(), b.height());
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            //noinspection deprecation
-            windowManager.getDefaultDisplay().getSize(szWindow);
         } else {
             //noinspection deprecation
-            DisplayMetrics displaymetrics = new DisplayMetrics();
-            //noinspection deprecation
-            windowManager.getDefaultDisplay().getMetrics(displaymetrics);
-            szWindow.set(displaymetrics.widthPixels, displaymetrics.heightPixels);
+            windowManager.getDefaultDisplay().getSize(szWindow);
         }
     
         int width = (WindowSetup.width == -1999) ? -1 : WindowSetup.width;
@@ -244,7 +240,6 @@ public class OverlayService extends Service implements View.OnTouchListener {
         return START_NOT_STICKY;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     private int screenHeight() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowMetrics metrics = windowManager.getCurrentWindowMetrics();
@@ -372,31 +367,10 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     @Override
     public void onCreate() {
-        // Get the cached FlutterEngine
-        FlutterEngine flutterEngine = FlutterEngineCache.getInstance().get(OverlayConstants.CACHED_TAG);
+        // The channels are wired in onStartCommand, which always runs before
+        // they are used; here the engine only needs to exist.
+        ensureEngine(this);
 
-        if (flutterEngine == null) {
-            // Handle the error if engine is not found
-            Log.e("OverlayService", "Flutter engine not found, hence creating new flutter engine");
-            FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
-            DartExecutor.DartEntrypoint entryPoint = new DartExecutor.DartEntrypoint(
-                FlutterInjector.instance().flutterLoader().findAppBundlePath(),
-                "overlayMain"
-            );  // "overlayMain" is custom entry point
-
-            flutterEngine = engineGroup.createAndRunEngine(this, entryPoint);
-
-            // Cache the created FlutterEngine for future use
-            FlutterEngineCache.getInstance().put(OverlayConstants.CACHED_TAG, flutterEngine);
-        }
-
-        // Create the MethodChannel with the properly initialized FlutterEngine
-        if (flutterEngine != null) {
-            flutterChannel = new MethodChannel(flutterEngine.getDartExecutor(), OverlayConstants.OVERLAY_TAG);
-            overlayMessageChannel = new BasicMessageChannel(flutterEngine.getDartExecutor(), OverlayConstants.MESSENGER_TAG, JSONMessageCodec.INSTANCE);
-        }
-
-        // Initialize current orientation
         currentOrientation = getResources().getConfiguration().orientation;
 
         // Do NOT promote to foreground: overlay should not create a second FGS.
@@ -434,17 +408,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
         }
     }
 
-    private void createNotificationChannel() {
-        // No-op: no foreground notification channel needed
-    }
-
-    private int getDrawableResourceId(String resType, String name) {
-        return getApplicationContext().getResources().getIdentifier(String.format("ic_%s", name), resType, getApplicationContext().getPackageName());
-    }
-
     private int dpToPx(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                Float.parseFloat(dp + ""), mResources.getDisplayMetrics());
+                (float) dp, mResources.getDisplayMetrics());
     }
 
     private double pxToDp(int px) {

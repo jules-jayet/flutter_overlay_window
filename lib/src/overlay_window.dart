@@ -80,15 +80,14 @@ class FlutterOverlayWindow {
     try {
       return await _channel.invokeMethod<bool?>('requestPermission');
     } on PlatformException catch (error) {
-      log("Error requestPermession: $error");
+      log("Error requestPermission: $error");
       rethrow;
     }
   }
 
-  /// Closes overlay if open
+  /// Closes overlay if open, returns whether there was one to close.
   static Future<bool?> closeOverlay() async {
-    final bool? _res = await _channel.invokeMethod('closeOverlay');
-    return _res;
+    return await _channel.invokeMethod<bool?>('closeOverlay');
   }
 
   /// Broadcast data to and from overlay app
@@ -98,12 +97,19 @@ class FlutterOverlayWindow {
 
   /// Streams message shared between overlay and main app
   static Stream<dynamic> get overlayListener {
-    _overlayMessageChannel.setMessageHandler((message) async {
-      _controller.add(message);
-      return message;
-    });
+    // Idempotent: re-reading the getter must not re-wire the platform
+    // handler, only hand back the same stream.
+    if (!_listenerAttached) {
+      _overlayMessageChannel.setMessageHandler((message) async {
+        _controller.add(message);
+        return message;
+      });
+      _listenerAttached = true;
+    }
     return _controller.stream;
   }
+
+  static bool _listenerAttached = false;
 
   /// Stream that emits an event when the overlay drag ends (ACTION_UP)
   ///
@@ -133,10 +139,9 @@ class FlutterOverlayWindow {
 
   /// Update the overlay flag while the overlay in action
   static Future<bool?> updateFlag(OverlayFlag flag) async {
-    final bool? _res = await _overlayChannel.invokeMethod<bool?>('updateFlag', {
+    return await _overlayChannel.invokeMethod<bool?>('updateFlag', {
       'flag': flag.name,
     });
-    return _res;
   }
 
   /// Update the overlay size in the screen
@@ -145,11 +150,11 @@ class FlutterOverlayWindow {
     int height,
     bool enableDrag,
   ) async {
-    final bool? _res = await _overlayChannel.invokeMethod<bool?>(
-      'resizeOverlay',
-      {'width': width, 'height': height, 'enableDrag': enableDrag},
-    );
-    return _res;
+    return await _overlayChannel.invokeMethod<bool?>('resizeOverlay', {
+      'width': width,
+      'height': height,
+      'enableDrag': enableDrag,
+    });
   }
 
   /// Update the overlay position in the screen
@@ -158,27 +163,22 @@ class FlutterOverlayWindow {
   ///
   /// `return` true if the position updated successfully
   static Future<bool?> moveOverlay(OverlayPosition position) async {
-    final bool? _res = await _channel.invokeMethod<bool?>(
-      'moveOverlay',
-      position.toMap(),
-    );
-    return _res;
+    return await _channel.invokeMethod<bool?>('moveOverlay', position.toMap());
   }
 
   /// Get the current overlay position
   ///
   /// `return` the current overlay position
   static Future<OverlayPosition> getOverlayPosition() async {
-    final Map<Object?, Object?>? _res = await _channel.invokeMethod(
+    final Map<Object?, Object?>? result = await _channel.invokeMethod(
       'getOverlayPosition',
     );
-    return OverlayPosition.fromMap(_res);
+    return OverlayPosition.fromMap(result);
   }
 
   /// Check if the current overlay is active
   static Future<bool> isActive() async {
-    final bool? _res = await _channel.invokeMethod<bool?>('isOverlayActive');
-    return _res ?? false;
+    return await _channel.invokeMethod<bool?>('isOverlayActive') ?? false;
   }
 
   /// Dispose overlay stream

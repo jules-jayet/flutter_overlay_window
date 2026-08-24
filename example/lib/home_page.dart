@@ -67,10 +67,7 @@ class _HomePageState extends State<HomePage> {
                 if (await FlutterOverlayWindow.isActive()) return;
                 await FlutterOverlayWindow.showOverlay(
                   enableDrag: true,
-                  overlayTitle: "X-SLAYER",
-                  overlayContent: 'Overlay Enabled',
                   flag: OverlayFlag.defaultFlag,
-                  visibility: NotificationVisibility.visibilityPublic,
                   positionGravity: PositionGravity.auto,
                   height: (MediaQuery.of(context).size.height * 0.6).toInt(),
                   width: WindowSize.matchParent,

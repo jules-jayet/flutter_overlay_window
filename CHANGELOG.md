@@ -1,3 +1,10 @@
+## 6.3.1
+- Fix: fatal `IllegalStateException: Reply already submitted` when returning from the overlay permission settings screen. `pendingResult` was overwritten by *every* method call (including `checkPermission` issued while the app was paused), so `onActivityResult` replied to an already-answered Result. The pending Result is now stored only by `requestPermission` and consumed exactly once.
+- Fix: `closeOverlay` never answered its Result when no overlay was running, leaving the Dart future pending forever. It now returns `false`.
+- Fix: `requestPermission` now opens the settings screen on Android M/N too (it used to return `true` without asking below O), replies `true` immediately when the permission is already held, and returns a `NO_ACTIVITY` error instead of an NPE when no activity is attached.
+- Fix: activity detach for config changes now removes the activity-result listener and Application lifecycle callbacks; they used to stack up on every rotation.
+- Android: engine creation consolidated into `OverlayService.ensureEngine` (was duplicated in three places); dead code removed (duplicate `isOverlayActive` branch, no-op notification helpers, unused `showWhenLocked`); `onMessage` no longer NPEs when the overlay engine is absent.
+
 ## 6.3.0
 - Add: Orientation change detection via EventChannel
 - Add: `orientationChangedStream` to listen for portrait/landscape changes
